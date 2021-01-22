@@ -196,7 +196,7 @@ module INotify
     #   e.g. if the file isn't found, read access is denied,
     #   or the flags don't contain any events
     def watch(path, *flags, &callback)
-      return Watcher.new(self, path, *flags, &callback) unless flags.include?(:recursive)
+      return Watcher.new(self, path, *flags, skip_directory_if: nil, &callback) unless flags.include?(:recursive)
 
       dir = Dir.new(path)
 
@@ -204,6 +204,7 @@ module INotify
         d = File.join(path, base)
         binary_d = d.respond_to?(:force_encoding) ? d.dup.force_encoding('BINARY') : d
         next if binary_d =~ /\/\.\.?$/ # Current or parent directory
+        next if skip_directory_if&.call(d)
         next if RECURSIVE_BLACKLIST.include?(d)
         next if flags.include?(:dont_follow) && File.symlink?(d)
         next if !File.directory?(d)
